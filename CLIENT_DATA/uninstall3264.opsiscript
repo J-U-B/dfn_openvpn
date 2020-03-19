@@ -1,18 +1,75 @@
-; Copyright (c) uib gmbh (www.uib.de)
-; This sourcecode is owned by uib gmbh
-; and published under the Terms of the General Public License.
-; credits: http://www.opsi.org/en/credits/
-
 [Actions]
-; insert common values
 include_insert "common.opsiinc"
-
 comment "Show product picture"
-ShowBitmap "%ScriptPath%\" + $ProductId$ + ".png" $ProductName$
-
-Message "Uninstalling " + $ProductName$ + " ..."
-
-if FileExists("%ScriptPath%\delsub3264.opsiscript")
-	comment "Start uninstall sub section"
-	Sub "%ScriptPath%\delsub3264.opsiscript"
+	if (FileExists("%ScriptPath%\..\lib\icons\%installingProdName%.png"))
+       comment "logo at local library/icons found."
+       ShowBitmap "%ScriptPath%\..\lib\icons\%installingProdName%.png" $ProductName$
+	else
+       comment "no logo at local library/icons, use from ScriptPath ..."
+       ShowBitmap "%ScriptPath%\" + $ProductId$ + ".png" $ProductName$
 endif
+Message "Uninstalling " + $ProductName$ + " ..."
+if ($headlessmode$ = "true")
+	ChangeDirectory "%Systemdrive%\tmp"
+	Set $workingdir$ = "%Systemdrive%\tmp\dfn_openvpn"
+	if FileExists($workingdir$)
+		Files_rmloctmp /SysNative
+	endif
+	Files_cpcustomfolder /SysNative
+	Files_cpdelsub /SysNative
+	opsiservicecall_manipulate_setup_status
+	opsiservicecall_manipulate_install_status
+	opsiservicecall_manipulate_action_prog
+else
+	Set $workingdir$ = "%SCRIPTPATH%"
+endif
+if FileExists($workingdir$ + "\delsub3264.opsiscript")
+	comment "Start uninstall sub section"
+	Sub $workingdir$ + "\delsub3264.opsiscript"
+endif
+
+if FileExists($InstallDir$)
+	Files_delete
+endif
+
+if ($headlessmode$ = "true")
+	Files_rmloctmp /SysNative
+endif
+
+ExitWindows /Reboot
+
+[Files_rmloctmp]
+del -sf "$workingdir$"
+
+[Files_cpcustomfolder]
+copy -se "%ScriptPath%\custom\*" "%Systemdrive%\tmp\dfn_openvpn\custom\"
+
+[Files_cpdelsub]
+copy "%ScriptPath%\delsub3264.opsiscript" "%Systemdrive%\tmp\dfn_openvpn"
+
+[Files_delete]
+del -sf "$InstallDir$"
+
+[opsiservicecall_manipulate_setup_status]
+"method":"setProductActionRequest"
+"params":[
+			"$ProductId$"
+			"%HostID%"
+			"none"
+		]
+		
+[opsiservicecall_manipulate_install_status]
+"method": "setProductInstallationStatus"
+"params":[
+			"$ProductId$"
+			"%HostID%"
+			"not_installed"
+		]
+
+[opsiservicecall_manipulate_action_prog]
+"method": "setProductActionProgress",
+"params":[
+			"$ProductId$"
+			"%HostID%"
+			"check local logs"
+		]

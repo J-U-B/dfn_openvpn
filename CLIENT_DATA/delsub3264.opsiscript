@@ -1,33 +1,34 @@
-; Copyright (c) uib gmbh (www.uib.de)
-; This sourcecode is owned by uib gmbh
-; and published under the Terms of the General Public License.
-; credits: http://www.opsi.org/en/credits/
-
 if FileExists($UninstallProgram$)
 	comment "Uninstall program found, starting uninstall"
-	Winbatch_uninstall
+	Message "Uninstalling (old) " + $ProductId$
+	DosInAnIcon_stop_services winst /SysNative
+	killtask "openvpn-gui.exe"
+	killtask "openvpnserv.exe"
+	killtask "openvpn.exe"
+	Winbatch_uninstall /SysNative
 	Sub_check_exitcode
-endif
-
-if FileExists($InstallDir$)
-	Files_delete
+	Winbatch_trap_async_uninst /SysNative
+	Winbatch_rem_cert /SysNative
 endif
 
 comment "include custom post uninstall file"
-set $CustomPostUninstall$ = GetProductProperty("custom-post-uninstall","none")
+set $CustomPostUninstall$ = GetProductProperty("custom-post-deinstall","none")
 if not ($CustomPostUninstall$ = "none")
-	if FileExists("%ScriptPath%\custom\" + $CustomPostUninstall$)
-		sub "%ScriptPath%\custom\" + $CustomPostUninstall$
+	if FileExists($workingdir$ + "\custom\" + $CustomPostUninstall$)
+		Sub $workingdir$ + "\custom\" + $CustomPostUninstall$
 	endif
 endif
 
-Registry_delete_NonAdminKey
+[DosInAnIcon_stop_services]
+net stop "OpenVPNService"
+net stop "OpenVPNServiceInteractive"
+net stop "OpenVPNServiceLegacy"
 
 [Winbatch_uninstall]
 "$UninstallProgram$" /S
 
-[Registry_delete_NonAdminKey]
-DeleteKey [HKEY_LOCAL_MACHINE\SOFTWARE\OpenVPN-GUI]
+[Winbatch_trap_async_uninst]
+PowerShell.exe -ExecutionPolicy Bypass -NonInteractive -WindowStyle Hidden -Command "Do { Write-host 'i am still here'; Start-Sleep 10 } While (Get-Process -Name au_ )"
 
-[Files_delete]
-del -sf "$InstallDir$"
+[Winbatch_rem_cert]
+certutil -delstore TrustedPublisher 0bde83ae2f950736d3b59b0e0d23c216

@@ -1,5 +1,5 @@
 [Package]
-version: 2
+version: 4
 depends: 
 incremental: False
 
@@ -7,9 +7,9 @@ incremental: False
 type: localboot
 id: dfn_openvpn
 name: Open VPN Client
-description: Open VPN is an open-source VPN application
+description: Open VPN is an open-source VPN application. / OpenVPN ist eine freie Software zum Aufbau eines Virtuellen Privaten Netzwerkes (VPN) über eine verschlüsselte TLS-Verbindung.
 advice: 
-version: 2.3.10
+version: 2.4.8
 priority: 0
 licenseRequired: False
 productClasses: 
@@ -23,15 +23,9 @@ userLoginScript:
 
 [ProductProperty]
 type: bool
-name: first-start-as-non-admin
-description: First start as non-admin? Administrator privileges are necessary to create a registry key and to set values
-default: True
-
-[ProductProperty]
-type: bool
-name: desktopicon
-description: Create desktop shortcut
-default: True
+name: desktop-link
+description: Link on Desktop?
+default: False
 
 [ProductProperty]
 type: bool
@@ -59,12 +53,6 @@ default: True
 
 [ProductProperty]
 type: bool
-name: install-openssl-utilities
-description: Install the utilities for generating public/private key pairs
-default: False
-
-[ProductProperty]
-type: bool
 name: install-easyrsa
 description: Install the RSA X509 certificate management scripts
 default: False
@@ -75,19 +63,157 @@ name: custom-post-install
 multivalue: False
 editable: True
 description: Define filename for include script in custom directory after installation
-values: ["none", "post-install.opsiscript"]
+values: ["none", "post-install.opsiinc"]
 default: ["none"]
 
 [ProductProperty]
 type: unicode
-name: custom-post-uninstall
+name: custom-post-deinstall
 multivalue: False
 editable: True
 description: Define filename for include script in custom directory after uninstallation
-values: ["none", "post-uninstall.opsiscript"]
+values: ["none", "post-deinstall.opsiinc"]
 default: ["none"]
 
+[ProductProperty]
+type: bool
+name: headlessmode
+description: Set this property to True to activate the special installation procedures if the target client has connection to the opsi-server only over openvpn and would lose this connection during reinstallation / update / etc.
+default: False
+
 [Changelog]
+dfn_openvpn (2.4.8-4) experimental; urgency=low
+
+  * headlessmode cleanup moved behind execution of custom postinstall
+  * Installer binary and openvpn_certificate.cer in package moved to files/ directory
+  * Installer: using default file name from download
+  * Installer binary removed from git repository
+
+  -- Jens Boettge <boettge@mpi-halle.mpg.de>, 2020-03-19  13:20:52 +0100
+
+
+dfn_openvpn (2.4.8-3) experimental; urgency=low
+
+  * Bugfixes: revert to old desktop link management
+
+  -- Philipp Schuhmann  <opsi@wiwi.kit.edu>  06 November 2019
+
+dfn_openvpn (2.4.8-2) experimental; urgency=low
+
+  * Bugfixes: Copy of cfg-files, desktop-links and trying to fix tap-cert-prob
+
+  -- Philipp Schuhmann  <opsi@wiwi.kit.edu>  06 November 2019
+
+dfn_openvpn (2.4.8-1) experimental; urgency=low
+
+  * Update to 2.4.8 (and changes made with 2.4.7-3)
+
+  -- Philipp Schuhmann  <opsi@wiwi.kit.edu>  27 May  2019
+
+dfn_openvpn (2.4.7-3) experimental / never released; urgency=low
+
+  * Added o4i-logo + liblogo-codesnippet, added copying of Scriptpath-Files to local tmp dir before installing and other special tasks (headlessmode), fixed uninstall by trapping the async. uninstall process, changed script structure, minor changes, etc.
+
+  -- Philipp Schuhmann  <opsi@wiwi.kit.edu>  27 May  2019
+
+dfn_openvpn (2.4.7-2) stable; urgency=low
+
+  * Added force command line switch
+  * Software Update (2.4.7-I603 --> 2.4.7-I602)
+
+  -- Luca Czernin  <opsi@wiwi.kit.edu>  26 March  2019
+
+dfn_openvpn (2.4.7-1) stable; urgency=low
+
+  * Software Update
+
+  -- Luca Czernin  <opsi@wiwi.kit.edu>  28 Februar  2019
+
+dfn_openvpn (2.4.6-1) stable; urgency=low
+
+  * Software Update
+
+  -- Luca Czernin  <opsi@wiwi.kit.edu>  26 September 2018
+
+dfn_openvpn (2.4.5-1) stable; urgency=low
+
+  * Software Update
+
+  -- Simon Notz  <opsi@wiwi.kit.edu>  02 March 2018
+
+dfn_openvpn (2.4.4-2) stable; urgency=low
+
+  * Check if "openvpn.exe" and "openvpn-gui.exe" exist after the installation.
+
+  -- Simon Notz  <opsi@wiwi.kit.edu>  28 September 2017
+
+dfn_openvpn (2.4.4-1) stable; urgency=low
+
+  * Software Update
+
+  -- Simon Notz  <opsi@wiwi.kit.edu>  27 September 2017
+
+dfn_openvpn (2.4.3-2) stable; urgency=low
+
+  * Software Update (2.4.3-I601 --> 2.4.3-I602)
+
+  -- Simon Notz  <opsi@wiwi.kit.edu>  25 July 2017
+
+dfn_openvpn (2.4.3-1) stable; urgency=low
+
+  * Software Update
+
+  -- Simon Notz  <opsi@wiwi.kit.edu>  22 June 2017
+
+dfn_openvpn (2.4.2-1) stable; urgency=low
+
+  * Software Update
+
+  -- Simon Notz  <opsi@wiwi.kit.edu>  19 June 2017
+
+dfn_openvpn (2.4.1-1) stable; urgency=low
+
+  * Software Update
+
+  -- Simon Notz  <opsi@wiwi.kit.edu>  11 April 2017
+
+dfn_openvpn (2.4.0-1) stable; urgency=low
+
+  * Major Update
+  * No administrator privileges needed for the first start of OpenVPN, registry keys won't be set anymore
+  * Changed installation options due to changed installer
+
+  -- Kevin Fafrowicz  <opsi@wiwi.kit.edu>  12 January 2017
+
+dfn_openvpn (2.3.13-1) stable; urgency=low
+
+  * Update
+
+  -- Kevin Fafrowicz  <opsi@wiwi.kit.edu>  15 November 2016
+
+wiwi_openvpn (2.3.12-2) stable; urgency=low
+
+  * OpenSSL Update
+
+  -- Kevin Fafrowicz  <opsi@wiwi.kit.edu>  04 October 2016
+
+dfn_openvpn (2.3.12-1) stable; urgency=low
+
+  * update
+  -- Kevin Fafrowicz  <opsi@wiwi.kit.edu>  01 September 2016
+
+dfn_openvpn (2.3.11-2) stable; urgency=low
+
+  * Config folder won't be deleted when set to update/setup
+
+  -- Kevin Fafrowicz  <opsi@wiwi.kit.edu>  Tue, 21 June 2016
+
+dfn_openvpn (2.3.11-1) stable; urgency=low
+
+  * program updated
+
+  -- Kevin Fafrowicz  <opsi@wiwi.kit.edu>  Tue, 24 May 2016
+
 dfn_openvpn (2.3.10-2) stable; urgency=low
 
   * minor changes in the code
@@ -104,28 +230,16 @@ dfn_openvpn (2.3.10-1) stable; urgency=low
 
   * Small additions
 
-  -- Kevin Fafrowicz <opsi@wiwi.kit.edu>  Fri, 06 Nov 2015 08:45:00 +0000
+  -- Kevin Fafrowicz <opsi@wiwi.kit.edu>  Fri, 06 Nov 2015
 
  dfn_openvpn (2.3.8-2) stable; urgency=low
 
   * Some fixes
 
- -- Kevin Fafrowicz, Christoph Walenta <opsi@wiwi.kit.edu>  Thu, 05 Nov 2015 15:30:00 +0000
+ -- Kevin Fafrowicz, Christoph Walenta <opsi@wiwi.kit.edu>  Thu, 05 Nov 2015
 
 dfn_openvpn (2.3.8-1) stable; urgency=low
 
   * Initial package
 
- -- Kevin Fafrowicz<opsi@wiwi.kit.edu>  Tue, 04 Nov 2015 17:30:00 +0000
-
-
-
-
-
-
-
-
-
-
-
-
+ -- Kevin Fafrowicz<opsi@wiwi.kit.edu>  Tue, 04 Nov 2015

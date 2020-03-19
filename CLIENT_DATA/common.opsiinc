@@ -1,46 +1,50 @@
-requiredWinstVersion >= "4.11.4.6"
+requiredWinstVersion >= "4.12.0.0"
 SetLogLevel = 7
-
-DefVar $UninstallProgram$
-DefVar $InstallDir$
-DefVar $LogDir$
-DefVar $ProductId$  
+DefVar $ProductVersion$
+DefVar $SetupFile$
+; ----------------------------------------------------------------
+DefVar $ProductId$
+DefVar $ProductName$
 DefVar $MinimumSpace$
+DefVar $InstallDir$
+DefVar $UninstallProgram$
+DefVar $PathToExe$
+DefVar $ProgramIcon$
 DefVar $ExitCode$
-DefVar $INST_SystemType$
-DefVar $INST_architecture$
-DefVar $WindowsNTVersion$
+; ----------------------------------------------------------------
+DefVar $InstallService$
+DefVar $InstallTAP$
+DefVar $InstallGUI$
+DefVar $InstallEasyRSA$
+DefVar $symbol$
+; ----------------------------------------------------------------
+DefVar $workingdir$
 DefVar $CustomPostUninstall$
 DefVar $CustomPostInstall$
-DefVar $SetDesktopIcon$
-DefVar $InstallService$
-DefVar $InstallGUI$
-DefVar $InstallTAP$
-DefVar $InstallOpenSSLUtilities$
-DefVar $InstallEasyRSA$
-DefVar $ProgramIcon$
-DefVar $PathToExe$	
-DefVar $ProductName$
-DefVar $SetupFile64$
-DefVar $SetupFile32$
-DefVar $SetupFile$
-DefVar $ProductVersion$
-
-Set $INST_SystemType$ 		= GetSystemType
-Set $WindowsNTVersion$ 		= GetMsVersionInfo
+DefVar $configfile$
+DefVar $headlessmode$
 ; ----------------------------------------------------------------
 Set $ProductVersion$		= strPart("%installingProdVersion%", "1", calculate(strPos("%installingProdVersion%","-") + "-" + "1" ))
-Set $SetupFile64$ 			= "openvpn-install-" + $ProductVersion$ + "-I601-x86_64.exe"
-Set $SetupFile32$ 			= "openvpn-install-" + $ProductVersion$ + "-I601-i686.exe"
 ; ----------------------------------------------------------------
-Set $LogDir$				= "%opsiLogDir%"
+; download installer from:
+;	https://openvpn.net/community-downloads/
+;
+Set $SetupFile$			= "files\openvpn-install-" + $ProductVersion$ + "-I602-Win10.exe"
+; ----------------------------------------------------------------
 Set $ProductId$				= "dfn_openvpn"
 Set $ProductName$			= "OpenVPN"
-Set $MinimumSpace$			= "10 MB"
+Set $MinimumSpace$			= "30 MB"
 Set $InstallDir$			= "%ProgramFilesSysnativeDir%\OpenVPN"
 Set $UninstallProgram$		= $InstallDir$ + "\Uninstall.exe"
 Set $PathToExe$				= $InstallDir$ + "\bin\openvpn-gui.exe"
 Set $ProgramIcon$			= $InstallDir$ + "\icon.ico"
 ; ----------------------------------------------------------------
+Set $InstallService$ = GetProductProperty("install-service", "true")
+Set $InstallTAP$ = GetProductProperty("install-tap", "true")
+Set $InstallGUI$ = GetProductProperty("install-gui", "true")
+Set $InstallEasyRSA$ = GetProductProperty("install-easyrsa", "false")
+Set $symbol$ = GetProductProperty("desktop-link", "false")
+Set $configfile$ = GetProductProperty("copy-config-files", "true")
+Set $headlessmode$ = GetProductProperty("headlessmode", "false")
 
 include_append "section_sub_check_exitcode.opsiinc"

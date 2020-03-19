@@ -1,114 +1,130 @@
-; Copyright (c) uib gmbh (www.uib.de)
-; This sourcecode is owned by uib gmbh
-; and published under the Terms of the General Public License.
-; credits: http://www.opsi.org/en/credits/
-
 [Actions]
-; insert common values
 include_insert "common.opsiinc"
 
 Message "installing " + $ProductName$ + " (" + $ProductVersion$ + ")..."
-
+if not (GetSystemType = "64 Bit System")
+	LogError "Sorry, this installation package is only for 64bit systems"
+	isFatalError
+endif
 if not(HasMinimumSpace ("%SystemDrive%", $MinimumSpace$))
 	LogError "Not enough space on %SystemDrive%, " + $MinimumSpace$ + " on drive %SystemDrive% needed for " + $ProductId$
 	isFatalError
-	; Stop process and set installation status to failed
-else
-	comment "Show product picture"
-	ShowBitmap "%ScriptPath%\" + $ProductId$ + ".png" $ProductName$
-	
-	if FileExists("%ScriptPath%\delsub3264.opsiscript")
-		comment "Start uninstall sub section"
-		Sub "%ScriptPath%\delsub3264.opsiscript"
-	endif
-	
-	if not($WindowsNTVersion$ = "10.0")
-		LogWarning "Only tested with Windows 10!"
-	endif
-	
-	if GetProductProperty("install-service", "true") = "true"
-		set $InstallService$ = "/SELECT_SERVICE=1"
-	else
-		set $InstallService$ = "/SELECT_SERVICE=0"
-	endif
-	
-	if GetProductProperty("install-tap", "true") = "true"
-		set $InstallTAP$ = "/SELECT_TAP=1"
-	else
-		set $InstallTAP$ = "/SELECT_TAP=0"
-	endif
-	
-	if GetProductProperty("install-gui", "true") = "true"
-		set $InstallGUI$ = "/SELECT_OPENVPNGUI=1"
-	else
-		set $InstallGUI$ = "/SELECT_OPENVPNGUI=0"
-	endif
-	
-	if GetProductProperty("install-openssl-utilities", "false") = "true"
-		set $InstallOpenSSLUtilities$ = "/SELECT_OPENSSL_UTILITIES=1"
-	else
-		set $InstallOpenSSLUtilities$ = "/SELECT_OPENSSL_UTILITIES=0"
-	endif
-	
-	if GetProductProperty("install-easyrsa", "false") = "true"
-		set $InstallEasyRSA$ = "/SELECT_EASYRSA=1"
-	else
-		set $InstallEasyRSA$ = "/SELECT_EASYRSA=0"
-	endif
-	
-	comment "installing"
+endif
+if not(GetMsVersionInfo = "10.0")
+	LogWarning "Only tested with Windows 10!"
+endif
 
-	Winbatch_add_cert
-	
-    comment "Start setup program"
-	ChangeDirectory "%SCRIPTPATH%"
-	if ($INST_SystemType$ = "x86 System")
-		Message "installing " + $ProductName$ + " (" + $ProductVersion$ + ") 32 Bit..."
-		;Winbatch_install_32
-		Set $SetupFile$ = $SetupFile32$
+comment "Show product picture"
+if (FileExists("%ScriptPath%\..\lib\icons\%installingProdName%.png"))
+   comment "logo at local library/icons found."
+   ShowBitmap "%ScriptPath%\..\lib\icons\%installingProdName%.png" $ProductName$
+else
+   comment "no logo at local library/icons, use from ScriptPath ..."
+   ShowBitmap "%ScriptPath%\" + $ProductId$ + ".png" $ProductName$
+endif
+if ($headlessmode$ = "true")
+	comment "copying whole Scriptpath and change opsi-winst dir to local temp directory before uninstall section starts in case client has only access to the opsi-depot over vpn"
+	ChangeDirectory "%Systemdrive%\tmp"
+	Set $workingdir$ = "%Systemdrive%\tmp\dfn_openvpn"
+	if FileExists($workingdir$)
+		Files_rmloctmp /SysNative
 	endif
-	if ($INST_SystemType$ = "64 Bit System")
-		Message "installing " + $ProductName$ + " (" + $ProductVersion$ + ") 64 Bit..."
-		;Winbatch_install_64
-		Set $SetupFile$ = $SetupFile64$
-	endif
-	Winbatch_install
-	Sub_check_exitcode
-	
-	if GetProductProperty("first-start-as-non-admin", "true") = "true"
-		Registry_NoAdmin /SysNative
-	endif
-	
-	if GetProductProperty("desktopicon", "true") = "false"
-		LinkFolder_delete_icon
-	endif
-	
-	if GetProductProperty("copy-config-files", "true") = "true"
-		if FileExists("%SCRIPTPATH%\custom\config")
-			Files_copy_config
-		else
-			LogWarning "No config files found! You can either put the config files in %SCRIPTPATH%\custom\config and they will be copied automatically"
-			LogWarning	"You can also put them in the " + $Installdir$ + "\config folder by hand or via script"
-		endif
+	Files_cptoloctmp /SysNative
+	comment "setting installation status to success in case client has only access to the opsi-depot over vpn, so that the installation status does not remain on setup in the database. Therefore the installation status in opsi-configed is not trustworthy and the status should be checked localy on target pc logs."
+	opsiservicecall_manipulate_setup_status
+	opsiservicecall_manipulate_install_status
+	opsiservicecall_manipulate_action_prog
+else
+	Set $workingdir$ = "%SCRIPTPATH%"
+endif
+if FileExists($workingdir$ + "\delsub3264.opsiscript")
+	comment "Start uninstall sub section"
+	Sub $workingdir$ + "\delsub3264.opsiscript"
+endif
+if FileExists($InstallDir$)
+	Files_delete
+endif
+
+if ($InstallService$ = "true")
+	Set $InstallService$ = "/SELECT_SERVICE=1"
+else
+	Set $InstallService$ = "/SELECT_SERVICE=0"
+endif
+if ($InstallTAP$ = "true")
+	set $InstallTAP$ = "/SELECT_TAP=1"
+else
+	set $InstallTAP$ = "/SELECT_TAP=0"
+endif
+if ($InstallGUI$ = "true")
+	set $InstallGUI$ = "/SELECT_OPENVPNGUI=1"
+else
+	set $InstallGUI$ = "/SELECT_OPENVPNGUI=0"
+endif
+if ($InstallEasyRSA$ = "true")
+	set $InstallEasyRSA$ = "/SELECT_EASYRSA=1"
+else
+	set $InstallEasyRSA$ = "/SELECT_EASYRSA=0"
+endif
+
+;=========================================================================================================================================================
+
+comment "installing"
+Message "Installing " + $ProductName$
+Winbatch_add_cert
+comment "Start setup program"
+Winbatch_install
+Sub_check_exitcode
+
+if ($symbol$ = "false")
+	LinkFolder_delete_icon
+endif
+
+if ($configfile$ = "true")
+	if FileExists($workingdir$ + "\custom\config\")
+		Files_copy_config
 	else
-		LogWarning "OpenVPN needs config files to work correctly, please make sure to put config files in the " + $Installdir$ + "\config folder"
+		Comment "No config files found! You can either put the config files in %SCRIPTPATH%\custom\config\ with ending .ovpn and they will be copied automatically"
+		Comment	"You can also put them in the " + $Installdir$ + "\config folder with ending .ovpn by hand or via script"
 	endif
-		
-	
-	comment "include custom post install file"
-	set $CustomPostInstall$ = GetProductProperty("custom-post-install","none")
-	if not ($CustomPostInstall$ = "none")
-		if FileExists("%SCRIPTPATH%\custom\" + $CustomPostInstall$)
-			sub "%SCRIPTPATH%\custom\" + $CustomPostInstall$
-		endif
+else
+	LogWarning "OpenVPN needs config files to work correctly, please make sure to put config files in the " + $Installdir$ + "\config folder with ending .ovpn"
+endif
+
+comment "include custom post install file"
+set $CustomPostInstall$ = GetProductProperty("custom-post-install","none")
+if not ($CustomPostInstall$ = "none")
+	if FileExists($workingdir$ + "\custom\" + $CustomPostInstall$)
+		Sub $workingdir$ + "\custom\" + $CustomPostInstall$
 	endif
-	
-	;Winbatch_remove_cert
-		
+endif
+
+if ($headlessmode$ = "true")
+	Files_rmloctmp /SysNative
+endif
+
+comment "Check if binaries exist"
+if not( FileExists("%ProgramFilesSysnativeDir%\OpenVPN\bin\openvpn.exe"))
+	LogError "openvpn.exe not found!"
+	isFatalError
+endif
+if ($InstallGUI$ = "true")
+	if not( FileExists("%ProgramFilesSysnativeDir%\OpenVPN\bin\openvpn-gui.exe"))
+		LogError "openvpn-gui.exe not found!"
+		isFatalError
+	endif
 endif
 
 [Files_copy_config]
-copy -s "%SCRIPTPATH%\custom\config\*" "$InstallDir$\config\"
+copy -se "$workingdir$\custom\config\*" "$InstallDir$\config\"
+
+[Files_cptoloctmp]
+copy -se "%ScriptPath%\*" "%Systemdrive%\tmp\dfn_openvpn\"
+
+[Files_rmloctmp]
+del -sf "$workingdir$"
+
+[Files_delete]
+del -sf "$InstallDir$"
 
 [LinkFolder_delete_icon]
 set_basefolder common_desktopdirectory
@@ -116,34 +132,31 @@ set_subfolder .
 delete_element "OpenVPN GUI"
 
 [Winbatch_add_cert]
-certutil -addstore TrustedPublisher "%SCRIPTPATH%\openvpn.cer"
-
-;[Winbatch_remove_cert]
-;certutil -delstore TrustedPublisher "OpenVPN Technologies, Inc."
-
-[Registry_NoAdmin]
-openkey [HKEY_LOCAL_MACHINE\SOFTWARE\OpenVPN-GUI]
-set "config_dir" = "$InstallDir$\config"
-set "config_ext" = "ovpn"
-set "exe_path" = "$InstallDir$\bin\openvpn.exe"
-set "log_dir" = "$InstallDir$\log"
-set "log_append" = "0"
-set "priority" = "NORMAL_PRIORITY_CLASS"
-set "log_viewer" = "%Systemroot%\notepad.exe"
-set "editor" = "%Systemroot%\notepad.exe"
-set "allow_edit" = "1"
-set "allow_service" = "0"
-set "allow_password" = "1"
-set "allow_proxy" = "1"
-set "service_only" = "0"
-set "show_balloon" = "1"
-set "silent_connection" = "0"
-set "show_script_window" = "1"
-set "disconnect_on_suspend" = "1"
-set "passphrase_attempts" = "3"
-set "connectscript_timeout" = "15"
-set "disconnectscript_timeout" = "10"
-set "preconnectscript_timeout" = "10"
+certutil -addstore -f TrustedPublisher "$workingdir$\openvpn_certificate.cer"
 
 [Winbatch_install]
-"%SCRIPTPATH%\$SetupFile$" /S $SetDesktopIcon$ $InstallService$ $InstallTAP$ $InstallGUI$ $InstallOpenSSLUtilities$ $InstallEasyRSA$
+"$workingdir$\$SetupFile$" /S /SELECT_SHORTCUTS=1 $InstallService$ $InstallTAP$ $InstallGUI$ $InstallEasyRSA$ /SELECT_LAUNCH=0
+
+[opsiservicecall_manipulate_setup_status]
+"method":"setProductActionRequest"
+"params":[
+			"$ProductId$"
+			"%HostID%"
+			"none"
+		]
+		
+[opsiservicecall_manipulate_install_status]
+"method": "setProductInstallationStatus"
+"params":[
+			"$ProductId$"
+			"%HostID%"
+			"installed"
+		]
+
+[opsiservicecall_manipulate_action_prog]
+"method": "setProductActionProgress",
+"params":[
+			"$ProductId$"
+			"%HostID%"
+			"check local logs"
+		]
